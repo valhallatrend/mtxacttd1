@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: mtxacttd
+    name: mtxacttd1
     env: docker
     plan: free
     dockerfilePath: ./Dockerfile

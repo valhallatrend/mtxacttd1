@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: axrepad
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: TZ
+        value: America/Santo_Domingo
+    buildCommand: ""
+    startCommand: ""

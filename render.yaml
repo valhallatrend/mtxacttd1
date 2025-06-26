@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: licencias-api
+    name: mtxacttd
     env: docker
     plan: free
     dockerfilePath: ./Dockerfile

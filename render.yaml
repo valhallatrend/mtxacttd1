@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: mtxacttd1
+    name: axrepad
     env: docker
     plan: free
     dockerfilePath: ./Dockerfile

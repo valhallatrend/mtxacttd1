@@ -1,10 +1,10 @@
 <?php
 header('Content-Type: application/json');
 
-// Recibir parámetros del EA
-$cuenta = $_GET['account'] ?? '';
-$broker = $_GET['broker'] ?? '';
-$version = $_GET['ea_version'] ?? '';
+// Soporte para POST y GET
+$cuenta  = $_POST['account'] ?? $_GET['account'] ?? '';
+$broker  = $_POST['broker'] ?? $_GET['broker'] ?? '';
+$version = $_POST['ea_version'] ?? $_GET['ea_version'] ?? '';
 
 if (!$cuenta || !is_numeric($cuenta)) {
     echo json_encode(["ok" => false, "error" => "Cuenta no especificada"]);

@@ -1,17 +1,43 @@
 <?php
 header('Content-Type: application/json');
 
-// Ruta segura al archivo de log (asegúrate que esta carpeta exista y tenga permisos)
-$log_file = __DIR__ . "/teveo/log_accesos.txt";
+// Ruta corregida y consistente con la estructura del proyecto
+$log_file = "/app/teveo/log_accesos.txt";
 
-// Función para guardar logs
+// Función mejorada para guardar logs con manejo de errores
 function registrar_log($cuenta, $broker, $version, $estado) {
     global $log_file;
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
-    $fecha = date('Y-m-d H:i:s');
-    $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'N/A';
-    $linea = "[$fecha] IP: $ip | Cuenta: $cuenta | Broker: $broker | Versión: $version | Estado: $estado | Agent: $user_agent\n";
-    file_put_contents($log_file, $linea, FILE_APPEND);
+    
+    try {
+        // Crear el directorio si no existe
+        $log_dir = dirname($log_file);
+        if (!is_dir($log_dir)) {
+            mkdir($log_dir, 0755, true);
+        }
+        
+        // Verificar si se puede escribir
+        if (!is_writable($log_dir)) {
+            error_log("No se puede escribir en el directorio de logs: $log_dir");
+            return false;
+        }
+        
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
+        $fecha = date('Y-m-d H:i:s');
+        $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'N/A';
+        $linea = "[$fecha] IP: $ip | Cuenta: $cuenta | Broker: $broker | Versión: $version | Estado: $estado | Agent: $user_agent\n";
+        
+        $resultado = file_put_contents($log_file, $linea, FILE_APPEND | LOCK_EX);
+        
+        if ($resultado === false) {
+            error_log("Error al escribir en el archivo de log: $log_file");
+            return false;
+        }
+        
+        return true;
+    } catch (Exception $e) {
+        error_log("Excepción al registrar log: " . $e->getMessage());
+        return false;
+    }
 }
 
 // ⚠️ Advertencia por acceso directo sin parámetros
@@ -21,13 +47,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($_GET['account'])) {
     echo "<p style='font-family:sans-serif;'>Intentar acceder directamente a este sistema es considerado una violación grave a la política del usuario.</p>";
     echo "<p style='font-family:sans-serif;'>Tu IP ha sido registrada y la cuenta asociada será bloqueada por uso indebido.</p>";
 
-    // Registrar intento directo
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
-    $fecha = date('Y-m-d H:i:s');
-    $agent = $_SERVER['HTTP_USER_AGENT'] ?? 'N/A';
-    file_put_contents($log_file,  
-        "[$fecha] INTENTO DIRECTO | IP: $ip | Agent: $agent\n", 
-        FILE_APPEND);
+    // Registrar intento directo con manejo de errores
+    try {
+        $log_dir = dirname($log_file);
+        if (!is_dir($log_dir)) {
+            mkdir($log_dir, 0755, true);
+        }
+        
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
+        $fecha = date('Y-m-d H:i:s');
+        $agent = $_SERVER['HTTP_USER_AGENT'] ?? 'N/A';
+        $linea = "[$fecha] INTENTO DIRECTO | IP: $ip | Agent: $agent\n";
+        
+        file_put_contents($log_file, $linea, FILE_APPEND | LOCK_EX);
+    } catch (Exception $e) {
+        error_log("Error al registrar intento directo: " . $e->getMessage());
+    }
+    
     exit;
 }
 
@@ -91,6 +127,6 @@ try {
     ]);
 
 } catch (Exception $e) {
-    registrar_log($cuenta, $broker, $version, "Error interno");
+    registrar_log($cuenta, $broker, $version, "Error interno: " . $e->getMessage());
     echo json_encode(["ok" => false, "error" => "Error interno"]);
 }

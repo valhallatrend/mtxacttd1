@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($_GET['account'])) {
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
     $fecha = date('Y-m-d H:i:s');
     $agent = $_SERVER['HTTP_USER_AGENT'] ?? 'N/A';
-    file_put_contents(__DIR__ . "/log_accesos.txt", 
+    $log_file = __DIR__ . "/../teveo/log_accesos.txt"; 
         "[$fecha] INTENTO DIRECTO | IP: $ip | Agent: $agent\n", 
         FILE_APPEND);
     exit;

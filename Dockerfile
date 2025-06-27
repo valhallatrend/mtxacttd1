@@ -1,23 +1,20 @@
-FROM php:8.2-cli
+# Imagen base con Apache + PHP 8.2
 FROM php:8.2-apache
 
-RUN mkdir -p /app/public /app/db
-COPY public/ /app/public/
-COPY db/ /app/db/
-COPY teveo/ /app/teveo/
-RUN mkdir -p /app/teveo && chmod -R 775 /app/teveo
+# Crear carpetas necesarias
+RUN mkdir -p /var/www/html/db /var/www/html/teveo && chmod -R 775 /var/www/html/teveo
 
-WORKDIR /app/public
-#CMD ["php", "-S", "0.0.0.0:8080"]
-# Copiar archivos del proyecto
-COPY . /var/www/html/
+# Copiar todo el contenido del proyecto
+COPY public/ /var/www/html/
+COPY db/ /var/www/html/db/
+COPY teveo/ /var/www/html/teveo/
 
-# Dar permisos correctos a todos los archivos PHP
+# Copiar archivos raíz como index.php, auth.php, etc.
+COPY index.php /var/www/html/
+COPY auth.php /var/www/html/
+
+# Asegurar permisos correctos
 RUN chmod -R 755 /var/www/html
 
-
-# Copiar solo el contenido de Public al directorio público de Apache
-COPY public/ /var/www/html/
-
-# Copiar base de datos
-COPY db/ /var/www/html/db/
+# Exponer el puerto estándar de Apache
+EXPOSE 80

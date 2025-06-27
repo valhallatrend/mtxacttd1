@@ -2,7 +2,7 @@
 header('Content-Type: application/json');
 
 // Ruta segura al archivo de log (asegúrate que esta carpeta exista y tenga permisos)
-$log_file = __DIR__ . "/../teveo/log_accesos.txt";
+$log_file = __DIR__ . "/teveo/log_accesos.txt";
 
 // Función para guardar logs
 function registrar_log($cuenta, $broker, $version, $estado) {

@@ -1,4 +1,4 @@
-FROM php:8.2-cli
+FROM php:8.2-apache
 
 RUN mkdir -p /app/public /app/db
 COPY public/ /app/public/

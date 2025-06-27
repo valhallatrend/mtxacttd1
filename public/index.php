@@ -1,32 +1,8 @@
 <?php
-// 👁️ Mostrar advertencia si el acceso es directo (sin parámetros)
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($_GET['account'])) {
-    header('Content-Type: text/html; charset=utf-8');
-    echo "<h2 style='color:red; font-family:sans-serif;'>⚠️ Este acceso ha sido registrado</h2>";
-    echo "<p style='font-family:sans-serif;'>Intentar acceder directamente a este sistema es considerado una violacion grave a la politica del usuario.</p>";
-    echo "<p style='font-family:sans-serif;'>Tu IP ha sido registrada y la cuenta asociada será bloqueada por uso indebido.</p>";
-
-    // Ruta del log
-    #$log_file = __DIR__ . "/log_accesos.txt";
-    $log_file = __DIR__ . "/../teveo/log_accesos.txt";
-
-    // Registrar intento en log
-    $ip = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
-    $fecha = date('Y-m-d H:i:s');
-    $agent = $_SERVER['HTTP_USER_AGENT'] ?? 'N/A';
-    file_put_contents(log_file, 
-        "[$fecha] INTENTO DIRECTO | IP: $ip | Agent: $agent\n", 
-        FILE_APPEND);
-    exit;
-}
-
 header('Content-Type: application/json');
 
-// Soporte para POST y GET
-$cuenta  = $_POST['account'] ?? $_GET['account'] ?? '';
-$broker  = $_POST['broker'] ?? $_GET['broker'] ?? '';
-$version = $_POST['ea_version'] ?? $_GET['ea_version'] ?? '';
-
+// Ruta segura al archivo de log (asegúrate que esta carpeta exista y tenga permisos)
+$log_file = __DIR__ . "/../teveo/log_accesos.txt";
 
 // Función para guardar logs
 function registrar_log($cuenta, $broker, $version, $estado) {
@@ -37,6 +13,28 @@ function registrar_log($cuenta, $broker, $version, $estado) {
     $linea = "[$fecha] IP: $ip | Cuenta: $cuenta | Broker: $broker | Versión: $version | Estado: $estado | Agent: $user_agent\n";
     file_put_contents($log_file, $linea, FILE_APPEND);
 }
+
+// ⚠️ Advertencia por acceso directo sin parámetros
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($_GET['account'])) {
+    header('Content-Type: text/html; charset=utf-8');
+    echo "<h2 style='color:red; font-family:sans-serif;'>⚠️ Este acceso ha sido registrado</h2>";
+    echo "<p style='font-family:sans-serif;'>Intentar acceder directamente a este sistema es considerado una violación grave a la política del usuario.</p>";
+    echo "<p style='font-family:sans-serif;'>Tu IP ha sido registrada y la cuenta asociada será bloqueada por uso indebido.</p>";
+
+    // Registrar intento directo
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
+    $fecha = date('Y-m-d H:i:s');
+    $agent = $_SERVER['HTTP_USER_AGENT'] ?? 'N/A';
+    file_put_contents($log_file,  
+        "[$fecha] INTENTO DIRECTO | IP: $ip | Agent: $agent\n", 
+        FILE_APPEND);
+    exit;
+}
+
+// Soporte para POST y GET
+$cuenta  = $_POST['account'] ?? $_GET['account'] ?? '';
+$broker  = $_POST['broker'] ?? $_GET['broker'] ?? '';
+$version = $_POST['ea_version'] ?? $_GET['ea_version'] ?? '';
 
 if (!$cuenta || !is_numeric($cuenta)) {
     registrar_log($cuenta, $broker, $version, "Cuenta no especificada");

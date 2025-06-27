@@ -4,7 +4,7 @@ header('Content-Type: application/json');
 // Ruta corregida y consistente con la estructura del proyecto
 $log_file = "/app/teveo/log_accesos.txt";
 
-// Función mejorada para guardar logs con manejo de errores
+// Función mejorada para guardar logs con manejo de errores y debugging
 function registrar_log($cuenta, $broker, $version, $estado) {
     global $log_file;
     
@@ -12,30 +12,56 @@ function registrar_log($cuenta, $broker, $version, $estado) {
         // Crear el directorio si no existe
         $log_dir = dirname($log_file);
         if (!is_dir($log_dir)) {
-            mkdir($log_dir, 0755, true);
+            $created = mkdir($log_dir, 0777, true);
+            if (!$created) {
+                error_log("ERROR: No se pudo crear el directorio: $log_dir");
+                return false;
+            }
+            // Cambiar permisos después de crear
+            chmod($log_dir, 0777);
         }
         
-        // Verificar si se puede escribir
+        // Verificar permisos del directorio
         if (!is_writable($log_dir)) {
-            error_log("No se puede escribir en el directorio de logs: $log_dir");
-            return false;
+            // Intentar cambiar permisos
+            chmod($log_dir, 0777);
+            if (!is_writable($log_dir)) {
+                error_log("ERROR: No se puede escribir en el directorio de logs: $log_dir");
+                return false;
+            }
         }
         
+        // Preparar la línea de log
         $ip = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
         $fecha = date('Y-m-d H:i:s');
         $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'N/A';
         $linea = "[$fecha] IP: $ip | Cuenta: $cuenta | Broker: $broker | Versión: $version | Estado: $estado | Agent: $user_agent\n";
         
+        // Intentar escribir
         $resultado = file_put_contents($log_file, $linea, FILE_APPEND | LOCK_EX);
         
         if ($resultado === false) {
-            error_log("Error al escribir en el archivo de log: $log_file");
-            return false;
+            // Si falla, intentar sin LOCK_EX
+            $resultado = file_put_contents($log_file, $linea, FILE_APPEND);
+            if ($resultado === false) {
+                error_log("ERROR: No se pudo escribir en el archivo de log: $log_file");
+                // Intentar escribir en un archivo temporal para debugging
+                $temp_log = "/tmp/debug_log_" . date('Y-m-d') . ".txt";
+                file_put_contents($temp_log, "ERROR LOG: $linea", FILE_APPEND);
+                return false;
+            }
         }
         
+        // Establecer permisos del archivo después de escribir
+        chmod($log_file, 0666);
+        
         return true;
+        
     } catch (Exception $e) {
         error_log("Excepción al registrar log: " . $e->getMessage());
+        // Log de debugging
+        $temp_log = "/tmp/debug_error_" . date('Y-m-d') . ".txt";
+        file_put_contents($temp_log, "EXCEPCIÓN: " . $e->getMessage() . "\n", FILE_APPEND);
         return false;
     }
 }
@@ -47,11 +73,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($_GET['account'])) {
     echo "<p style='font-family:sans-serif;'>Intentar acceder directamente a este sistema es considerado una violación grave a la política del usuario.</p>";
     echo "<p style='font-family:sans-serif;'>Tu IP ha sido registrada y la cuenta asociada será bloqueada por uso indebido.</p>";
 
-    // Registrar intento directo con manejo de errores
+    // Registrar intento directo con manejo de errores mejorado
     try {
         $log_dir = dirname($log_file);
         if (!is_dir($log_dir)) {
-            mkdir($log_dir, 0755, true);
+            mkdir($log_dir, 0777, true);
+            chmod($log_dir, 0777);
         }
         
         $ip = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
@@ -59,9 +86,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($_GET['account'])) {
         $agent = $_SERVER['HTTP_USER_AGENT'] ?? 'N/A';
         $linea = "[$fecha] INTENTO DIRECTO | IP: $ip | Agent: $agent\n";
         
-        file_put_contents($log_file, $linea, FILE_APPEND | LOCK_EX);
+        $resultado = file_put_contents($log_file, $linea, FILE_APPEND | LOCK_EX);
+        if ($resultado === false) {
+            // Intentar sin LOCK_EX
+            file_put_contents($log_file, $linea, FILE_APPEND);
+        }
+        // Establecer permisos después de escribir
+        chmod($log_file, 0666);
+        
     } catch (Exception $e) {
         error_log("Error al registrar intento directo: " . $e->getMessage());
+        // Log temporal para debugging
+        file_put_contents("/tmp/debug_direct_" . date('Y-m-d') . ".txt", 
+                         "ERROR DIRECTO: " . $e->getMessage() . "\n", FILE_APPEND);
     }
     
     exit;

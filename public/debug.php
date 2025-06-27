@@ -11,6 +11,36 @@ echo "Ruta del log: $log_file<br>\n";
 echo "Usuario del servidor web: " . get_current_user() . "<br>\n";
 echo "UID/GID: " . getmyuid() . "/" . getmygid() . "<br>\n";
 
+// Función para obtener IP real (copia de la función del index.php)
+function obtener_ip_real_test() {
+    $headers = [
+        'HTTP_CF_CONNECTING_IP',
+        'HTTP_X_REAL_IP',
+        'HTTP_X_FORWARDED_FOR',
+        'HTTP_X_FORWARDED',
+        'HTTP_X_CLUSTER_CLIENT_IP',  
+        'HTTP_FORWARDED_FOR',
+        'HTTP_FORWARDED',
+        'REMOTE_ADDR'
+    ];
+    
+    foreach ($headers as $header) {
+        if (!empty($_SERVER[$header])) {
+            $ip = $_SERVER[$header];
+            if (strpos($ip, ',') !== false) {
+                $ip = trim(explode(',', $ip)[0]);
+            }
+            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                return $ip;
+            }
+            if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                return $ip;
+            }
+        }
+    }
+    return $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
+}
+
 // 2. Verificar si el directorio existe
 $log_dir = dirname($log_file);
 echo "<br><strong>2. Estado del directorio:</strong><br>\n";

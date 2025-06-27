@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($_GET['account'])) {
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
     $fecha = date('Y-m-d H:i:s');
     $agent = $_SERVER['HTTP_USER_AGENT'] ?? 'N/A';
-    $log_file = __DIR__ . "/../teveo/log_accesos.txt"; 
+    file_put_contents(__DIR__ . "/log_accesos.txt", 
         "[$fecha] INTENTO DIRECTO | IP: $ip | Agent: $agent\n", 
         FILE_APPEND);
     exit;
@@ -24,8 +24,8 @@ $broker  = $_POST['broker'] ?? $_GET['broker'] ?? '';
 $version = $_POST['ea_version'] ?? $_GET['ea_version'] ?? '';
 
 // Ruta del log
-$log_file = __DIR__ . "/log_accesos.txt";
-
+#$log_file = __DIR__ . "/log_accesos.txt";
+$log_file = __DIR__ . "/../teve/log_accesos.txt"
 // Función para guardar logs
 function registrar_log($cuenta, $broker, $version, $estado) {
     global $log_file;

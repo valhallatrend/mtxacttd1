@@ -43,6 +43,7 @@ try {
 
     echo json_encode([
         "ok" => true,
+        "status" => "VALIDA",
         "cuenta" => $cuenta,
         "tipo" => strtoupper($row['tipo']),
         "expira" => $row['expira'],

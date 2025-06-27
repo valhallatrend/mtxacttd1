@@ -4,6 +4,45 @@ header('Content-Type: application/json');
 // Ruta corregida y consistente con la estructura del proyecto
 $log_file = "/app/teveo/log_accesos.txt";
 
+// Función para obtener la IP real del cliente
+function obtener_ip_real() {
+    // Lista de headers que pueden contener la IP real
+    $headers = [
+        'HTTP_CF_CONNECTING_IP',     // Cloudflare
+        'HTTP_X_REAL_IP',            // Nginx proxy
+        'HTTP_X_FORWARDED_FOR',      // Proxy estándar
+        'HTTP_X_FORWARDED',          // Proxy alternativo
+        'HTTP_X_CLUSTER_CLIENT_IP',  // Cluster/Load balancer
+        'HTTP_FORWARDED_FOR',        // RFC 7239
+        'HTTP_FORWARDED',            // RFC 7239
+        'REMOTE_ADDR'                // IP directa
+    ];
+    
+    foreach ($headers as $header) {
+        if (!empty($_SERVER[$header])) {
+            $ip = $_SERVER[$header];
+            
+            // Si hay múltiples IPs (separadas por coma), tomar la primera
+            if (strpos($ip, ',') !== false) {
+                $ip = trim(explode(',', $ip)[0]);
+            }
+            
+            // Validar que sea una IP válida y no privada/local
+            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                return $ip;
+            }
+            
+            // Si es una IP válida aunque sea privada, la usamos (para desarrollo)
+            if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                return $ip;
+            }
+        }
+    }
+    
+    // Fallback
+    return $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
+}
+
 // Función mejorada para guardar logs con manejo de errores y debugging
 function registrar_log($cuenta, $broker, $version, $estado) {
     global $log_file;
@@ -32,7 +71,7 @@ function registrar_log($cuenta, $broker, $version, $estado) {
         }
         
         // Preparar la línea de log
-        $ip = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
+        $ip = obtener_ip_real();
         $fecha = date('Y-m-d H:i:s');
         $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'N/A';
         $linea = "[$fecha] IP: $ip | Cuenta: $cuenta | Broker: $broker | Versión: $version | Estado: $estado | Agent: $user_agent\n";
@@ -81,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($_GET['account'])) {
             chmod($log_dir, 0777);
         }
         
-        $ip = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
+        $ip = obtener_ip_real();
         $fecha = date('Y-m-d H:i:s');
         $agent = $_SERVER['HTTP_USER_AGENT'] ?? 'N/A';
         $linea = "[$fecha] INTENTO DIRECTO | IP: $ip | Agent: $agent\n";

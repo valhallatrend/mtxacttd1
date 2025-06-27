@@ -95,7 +95,24 @@ foreach ($alt_paths as $path) {
     echo "<br>\n";
 }
 
-echo "<br><strong>7. Variables de entorno relevantes:</strong><br>\n";
+echo "<br><strong>7. Headers relacionados con IP:</strong><br>\n";
+$ip_headers = [
+    'REMOTE_ADDR',
+    'HTTP_CF_CONNECTING_IP',
+    'HTTP_X_REAL_IP', 
+    'HTTP_X_FORWARDED_FOR',
+    'HTTP_X_FORWARDED',
+    'HTTP_X_CLUSTER_CLIENT_IP',
+    'HTTP_FORWARDED_FOR',
+    'HTTP_FORWARDED'
+];
+
+foreach ($ip_headers as $header) {
+    $value = $_SERVER[$header] ?? null;
+    echo "$header: " . ($value ? $value : "No definido") . "<br>\n";
+}
+
+echo "<br><strong>8. Variables de entorno relevantes:</strong><br>\n";
 $env_vars = ['HOME', 'USER', 'TMPDIR', 'DOCUMENT_ROOT'];
 foreach ($env_vars as $var) {
     $value = getenv($var);

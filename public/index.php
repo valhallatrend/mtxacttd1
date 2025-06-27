@@ -6,6 +6,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($_GET['account'])) {
     echo "<p style='font-family:sans-serif;'>Intentar acceder directamente a este sistema es considerado una violacion grave a la politica del usuario.</p>";
     echo "<p style='font-family:sans-serif;'>Tu IP ha sido registrada y la cuenta asociada será bloqueada por uso indebido.</p>";
 
+    // Ruta del log
+    #$log_file = __DIR__ . "/log_accesos.txt";
+    $log_file = __DIR__ . "/../teveo/log_accesos.txt";
+
     // Registrar intento en log
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
     $fecha = date('Y-m-d H:i:s');
@@ -23,9 +27,7 @@ $cuenta  = $_POST['account'] ?? $_GET['account'] ?? '';
 $broker  = $_POST['broker'] ?? $_GET['broker'] ?? '';
 $version = $_POST['ea_version'] ?? $_GET['ea_version'] ?? '';
 
-// Ruta del log
-#$log_file = __DIR__ . "/log_accesos.txt";
-$log_file = __DIR__ . "/../teveo/log_accesos.txt";
+
 // Función para guardar logs
 function registrar_log($cuenta, $broker, $version, $estado) {
     global $log_file;

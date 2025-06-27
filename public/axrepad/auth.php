@@ -1,6 +1,6 @@
 <?php
 function auth() {
-    $url = 'https://axslsp.onrender.com/index.php';
+    $url = 'https://axslsp.onrender.com/asxp.php';
 
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

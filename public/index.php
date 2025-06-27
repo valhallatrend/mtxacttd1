@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($_GET['account'])) {
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
     $fecha = date('Y-m-d H:i:s');
     $agent = $_SERVER['HTTP_USER_AGENT'] ?? 'N/A';
-    file_put_contents(__DIR__ . "/log_accesos.txt", 
+    file_put_contents(log_file, 
         "[$fecha] INTENTO DIRECTO | IP: $ip | Agent: $agent\n", 
         FILE_APPEND);
     exit;

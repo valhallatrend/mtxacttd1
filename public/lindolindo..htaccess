@@ -1,0 +1,6 @@
+Options -Indexes
+
+<Files "licencias.sqlite">
+    Order allow,deny
+    Deny from all
+</Files>

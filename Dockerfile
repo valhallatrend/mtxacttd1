@@ -4,7 +4,9 @@ FROM php:8.2-apache
 RUN mkdir -p /app/public /app/db
 COPY public/ /app/public/
 COPY db/ /app/db/
+COPY teveo/ /app/teveo/
 RUN mkdir -p /app/teveo && chmod -R 775 /app/teveo
+
 WORKDIR /app/public
 #CMD ["php", "-S", "0.0.0.0:8080"]
 # Copiar archivos del proyecto

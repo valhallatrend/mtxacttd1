@@ -11,6 +11,3 @@ COPY . /var/www/html/
 
 # Dar permisos correctos a todos los archivos PHP
 RUN chmod -R 755 /var/www/html
-
-# Opcional: asegurar permisos al archivo específico (check.php)
-RUN chmod 755 /var/www/html/check.php

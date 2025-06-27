@@ -6,7 +6,7 @@ COPY public/ /app/public/
 COPY db/ /app/db/
 
 WORKDIR /app/public
-CMD ["php", "-S", "0.0.0.0:8080"]
+#CMD ["php", "-S", "0.0.0.0:8080"]
 # Copiar archivos del proyecto
 COPY . /var/www/html/
 

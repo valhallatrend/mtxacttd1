@@ -1,4 +1,21 @@
 <?php
+// 👁️ Mostrar advertencia si el acceso es directo (sin parámetros)
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($_GET['account'])) {
+    header('Content-Type: text/html; charset=utf-8');
+    echo "<h2 style='color:red; font-family:sans-serif;'>⚠️ Este acceso ha sido registrado</h2>";
+    echo "<p style='font-family:sans-serif;'>Intentar acceder directamente a este sistema será considerado un intento de ingeniería inversa.</p>";
+    echo "<p style='font-family:sans-serif;'>Tu IP ha sido registrada y la cuenta asociada será bloqueada en caso de uso indebido.</p>";
+
+    // Registrar intento en log
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
+    $fecha = date('Y-m-d H:i:s');
+    $agent = $_SERVER['HTTP_USER_AGENT'] ?? 'N/A';
+    file_put_contents(__DIR__ . "/log_accesos.txt", 
+        "[$fecha] INTENTO DIRECTO | IP: $ip | Agent: $agent\n", 
+        FILE_APPEND);
+    exit;
+}
+
 header('Content-Type: application/json');
 
 // Soporte para POST y GET

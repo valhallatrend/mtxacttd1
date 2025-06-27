@@ -43,8 +43,8 @@ function obtener_ip_real() {
     return $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
 }
 
-// Función mejorada para guardar logs con manejo de errores y debugging
-function registrar_log($cuenta, $broker, $version, $estado) {
+// Función mejorada para guardar logs con nombre y balance
+function registrar_log($cuenta, $broker, $version, $estado, $nombre_cuenta = '', $balance = '') {
     global $log_file;
     
     try {
@@ -70,11 +70,21 @@ function registrar_log($cuenta, $broker, $version, $estado) {
             }
         }
         
-        // Preparar la línea de log
+        // Preparar la línea de log con nombre y balance
         $ip = obtener_ip_real();
         $fecha = date('Y-m-d H:i:s');
         $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'N/A';
-        $linea = "[$fecha] IP: $ip | Cuenta: $cuenta | Broker: $broker | Versión: $version | Estado: $estado | Agent: $user_agent\n";
+        
+        // Agregar nombre y balance si están disponibles
+        $info_extra = '';
+        if (!empty($nombre_cuenta)) {
+            $info_extra .= " | Nombre: $nombre_cuenta";
+        }
+        if (!empty($balance)) {
+            $info_extra .= " | Balance: $balance";
+        }
+        
+        $linea = "[$fecha] IP: $ip | Cuenta: $cuenta | Broker: $broker | Versión: $version | Estado: $estado$info_extra | Agent: $user_agent\n";
         
         // Intentar escribir
         $resultado = file_put_contents($log_file, $linea, FILE_APPEND | LOCK_EX);
@@ -143,13 +153,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($_GET['account'])) {
     exit;
 }
 
-// Soporte para POST y GET
-$cuenta  = $_POST['account'] ?? $_GET['account'] ?? '';
-$broker  = $_POST['broker'] ?? $_GET['broker'] ?? '';
+// Soporte para POST y GET + nombre y balance
+$cuenta = $_POST['account'] ?? $_GET['account'] ?? '';
+$broker = $_POST['broker'] ?? $_GET['broker'] ?? '';
 $version = $_POST['ea_version'] ?? $_GET['ea_version'] ?? '';
+$nombre_cuenta = $_POST['account_name'] ?? $_GET['account_name'] ?? '';
+$balance = $_POST['balance'] ?? $_GET['balance'] ?? '';
 
 if (!$cuenta || !is_numeric($cuenta)) {
-    registrar_log($cuenta, $broker, $version, "Cuenta no especificada");
+    registrar_log($cuenta, $broker, $version, "Cuenta no especificada", $nombre_cuenta, $balance);
     echo json_encode(["ok" => false, "error" => "Cuenta no especificada"]);
     exit;
 }
@@ -163,7 +175,7 @@ try {
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$row) {
-        registrar_log($cuenta, $broker, $version, "Cuenta no registrada");
+        registrar_log($cuenta, $broker, $version, "Cuenta no registrada", $nombre_cuenta, $balance);
         echo json_encode(["ok" => false, "error" => "Cuenta no registrada"]);
         exit;
     }
@@ -171,24 +183,24 @@ try {
     $hoy = date('Y-m-d');
 
     if (strtolower($row['estado']) !== 'activo') {
-        registrar_log($cuenta, $broker, $version, "Licencia inactiva");
+        registrar_log($cuenta, $broker, $version, "Licencia inactiva", $nombre_cuenta, $balance);
         echo json_encode(["ok" => false, "error" => "Licencia inactiva"]);
         exit;
     }
 
     if ($row['expira'] < $hoy) {
-        registrar_log($cuenta, $broker, $version, "Licencia expirada");
+        registrar_log($cuenta, $broker, $version, "Licencia expirada", $nombre_cuenta, $balance);
         echo json_encode(["ok" => false, "error" => "Licencia expirada"]);
         exit;
     }
 
     if (!empty($row['version_permitida']) && $version !== $row['version_permitida']) {
-        registrar_log($cuenta, $broker, $version, "Versión no autorizada");
+        registrar_log($cuenta, $broker, $version, "Versión no autorizada", $nombre_cuenta, $balance);
         echo json_encode(["ok" => false, "error" => "Versión del EA no autorizada"]);
         exit;
     }
 
-    registrar_log($cuenta, $broker, $version, "Licencia válida");
+    registrar_log($cuenta, $broker, $version, "Licencia válida", $nombre_cuenta, $balance);
 
     echo json_encode([
         "ok" => true,
@@ -203,6 +215,6 @@ try {
     ]);
 
 } catch (Exception $e) {
-    registrar_log($cuenta, $broker, $version, "Error interno: " . $e->getMessage());
+    registrar_log($cuenta, $broker, $version, "Error interno: " . $e->getMessage(), $nombre_cuenta, $balance);
     echo json_encode(["ok" => false, "error" => "Error interno"]);
 }

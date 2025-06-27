@@ -43,9 +43,9 @@ if (file_exists($log_file)) {
     echo "Propietario: " . fileowner($log_file) . "<br>\n";
 }
 
-// 4. Intentar escribir
-echo "<br><strong>4. Test de escritura:</strong><br>\n";
-$test_line = "[" . date('Y-m-d H:i:s') . "] TEST DE ESCRITURA DESDE DEBUG\n";
+// 4. Intentar escribir con los nuevos campos
+echo "<br><strong>4. Test de escritura con nuevos campos:</strong><br>\n";
+$test_line = "[" . date('Y-m-d H:i:s') . "] TEST DE ESCRITURA | IP: " . obtener_ip_real_test() . " | Cuenta: 12345 | Broker: Test | Versión: 2.7-1 | Estado: TEST | Nombre: Usuario Test | Balance: 1000.00 | Agent: Debug Script\n";
 
 try {
     $result = file_put_contents($log_file, $test_line, FILE_APPEND);
@@ -112,7 +112,37 @@ foreach ($ip_headers as $header) {
     echo "$header: " . ($value ? $value : "No definido") . "<br>\n";
 }
 
-echo "<br><strong>8. Variables de entorno relevantes:</strong><br>\n";
+echo "<br><strong>9. Ubicación actual de los logs:</strong><br>\n";
+echo "Ruta configurada: <strong>$log_file</strong><br>\n";
+
+// Verificar si existen logs en diferentes ubicaciones posibles
+$posibles_logs = [
+    "/app/teveo/log_accesos.txt",
+    "/tmp/api_log_" . date('Y-m-d') . ".txt",
+    "/tmp/debug_log_" . date('Y-m-d') . ".txt",
+    getcwd() . "/teveo/log_accesos.txt",
+    "/var/www/html/teveo/log_accesos.txt"
+];
+
+foreach ($posibles_logs as $log_path) {
+    if (file_exists($log_path)) {
+        $size = filesize($log_path);
+        $modified = date('Y-m-d H:i:s', filemtime($log_path));
+        echo "✅ <strong>ENCONTRADO:</strong> $log_path (${size} bytes, modificado: $modified)<br>\n";
+        
+        // Mostrar las últimas 3 líneas
+        $content = file_get_contents($log_path);
+        $lines = explode("\n", trim($content));
+        $last_lines = array_slice($lines, -3);
+        
+        echo "<strong>Últimas entradas:</strong><br>\n";
+        echo "<pre style='background:#f5f5f5; padding:10px; font-size:12px;'>" . htmlspecialchars(implode("\n", $last_lines)) . "</pre><br>\n";
+    } else {
+        echo "❌ No existe: $log_path<br>\n";
+    }
+}
+
+echo "<br><strong>10. Variables de entorno relevantes:</strong><br>\n";
 $env_vars = ['HOME', 'USER', 'TMPDIR', 'DOCUMENT_ROOT'];
 foreach ($env_vars as $var) {
     $value = getenv($var);

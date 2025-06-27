@@ -1,13 +1,10 @@
 FROM php:8.2-apache
 
-RUN mkdir -p /app/public /app/db
-COPY public/ /app/public/
-COPY db/ /app/db/
+# Copiar solo lo necesario al servidor Apache
+COPY Public/ /var/www/html/
 
-WORKDIR /app/public
-CMD ["php", "-S", "0.0.0.0:8080"]
-# Copiar archivos del proyecto
-COPY . /var/www/html/
+# Copiar la base de datos al mismo contenedor (dentro del path del proyecto)
+COPY db/ /var/www/html/db/
 
-# Dar permisos correctos a todos los archivos PHP
+# Dar permisos correctos
 RUN chmod -R 755 /var/www/html

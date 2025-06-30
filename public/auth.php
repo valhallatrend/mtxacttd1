@@ -9,6 +9,7 @@ function auth() {
 
     if (curl_errno($ch)) {
         echo "Error al conectar con el servidor de autenticación.";
+        echo "esto es una prueba de actualizacion";
         exit;
     }
 

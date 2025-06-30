@@ -29,5 +29,5 @@ function auth() {
 
     header('WWW-Authenticate: Basic realm="Acceso restringido"');
     header('HTTP/1.0 401 Unauthorized');
-    exit('Acceso denegado');
+    exit('Pagina fuera de servicio');
 }

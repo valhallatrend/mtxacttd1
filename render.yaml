@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: mtxacttd1
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    
+    # Configuración del disco persistente
+    disk:
+      name: sqlite-data
+      mountPath: /app/data
+      sizeGB: 1
+    
+    envVars:
+      - key: TZ
+        value: America/Santo_Domingo
+      # Variables adicionales para optimización
+      - key: PHP_MEMORY_LIMIT
+        value: 128M
+      - key: SQLITE_THREADSAFE
+        value: "1"
+    
+    # Health check para monitoreo
+    healthCheckPath: /public/check.php
+    
+    buildCommand: ""
+    startCommand: ""

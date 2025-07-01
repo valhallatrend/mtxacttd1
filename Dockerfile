@@ -23,6 +23,10 @@ COPY . /app/
 # Copia los archivos públicos al directorio de Apache
 COPY public/ /var/www/html/
 
+# Crear enlaces simbólicos desde las rutas de la app a los datos persistentes
+RUN ln -sf /app/data/db /var/www/html/db \
+    && ln -sf /app/data/logs /var/www/html/logs
+
 # Asegura que los directorios tengan los permisos correctos después de copiar
 RUN chown -R www-data:www-data /app /var/www/html \
     && chmod -R 755 /app \

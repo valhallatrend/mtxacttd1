@@ -1,109 +1,116 @@
 <?php
-echo "<h2>🔄 Activador de Servicio de Autenticación</h2>";
-
-if (isset($_GET['wake'])) {
+function auth() {
     $url = 'https://axslsp.onrender.com/asxp.php';
     
-    echo "<p>🔄 Enviando petición de activación a: <code>$url</code></p>";
-    echo "<p>⏱️ Esto puede tomar 30-60 segundos para servicios dormidos...</p>";
+    // Usuarios de respaldo local (por si el servidor falla)
+    $backup_users = [
+        ['u' => 'admin', 'p' => 'pass1234'],    // Mismo que el servidor remoto
+        ['u' => 'gestor', 'p' => 'clave5678']   // Mismo que el servidor remoto
+    ];
     
-    // Flush output para mostrar el progreso
-    ob_flush();
-    flush();
+    $users = null;
+    $auth_source = 'backup';
     
-    $start_time = time();
-    
+    // Intentar servidor remoto con configuración optimizada
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 90,
-        CURLOPT_CONNECTTIMEOUT => 30,
+        CURLOPT_TIMEOUT => 20,              // Aumentado para servicios de Render
+        CURLOPT_CONNECTTIMEOUT => 10,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_USERAGENT => 'ServiceWaker/1.0'
+        CURLOPT_USERAGENT => 'AuthSystem/Final',
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            'Cache-Control: no-cache'
+        ]
     ]);
     
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $total_time = curl_getinfo($ch, CURLINFO_TOTAL_TIME);
     $curl_error = curl_error($ch);
     curl_close($ch);
     
-    $end_time = time();
-    $duration = $end_time - $start_time;
-    
-    echo "<hr>";
-    echo "<h3>📊 Resultado:</h3>";
-    echo "<strong>⏱️ Tiempo total:</strong> {$duration} segundos<br>";
-    echo "<strong>📡 Código HTTP:</strong> $http_code<br>";
-    echo "<strong>🔗 Tiempo cURL:</strong> " . round($total_time, 2) . " segundos<br>";
-    
-    if ($curl_error) {
-        echo "<strong>❌ Error cURL:</strong> $curl_error<br>";
+    // Procesar respuesta del servidor remoto
+    if (!$curl_error && $http_code == 200 && $response) {
+        $response = trim($response);
+        
+        // Limpiar BOM UTF-8 si existe
+        if (substr($response, 0, 3) === "\xEF\xBB\xBF") {
+            $response = substr($response, 3);
+        }
+        
+        $remote_users = json_decode($response, true);
+        
+        if (json_last_error() === JSON_ERROR_NONE && is_array($remote_users) && !empty($remote_users)) {
+            $users = $remote_users;
+            $auth_source = 'remote';
+            error_log("Auth: Usando servidor remoto - " . count($remote_users) . " usuarios cargados");
+        } else {
+            error_log("Auth: Servidor remoto devolvió JSON inválido: " . json_last_error_msg());
+        }
+    } else {
+        error_log("Auth: Servidor remoto falló - HTTP: $http_code, Error: " . ($curl_error ?: 'ninguno'));
     }
     
-    if ($http_code == 200) {
-        echo "<div style='background:#d4edda; border:1px solid #c3e6cb; padding:15px; border-radius:5px; margin:10px 0;'>";
-        echo "✅ <strong>¡Servicio activado correctamente!</strong><br>";
-        echo "🎯 El servidor de autenticación está ahora disponible.<br>";
-        echo "🔄 Puedes intentar acceder al panel de licencias.";
-        echo "</div>";
-        
-        // Verificar que devuelve JSON válido
-        if ($response) {
-            $json = json_decode($response, true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($json)) {
-                echo "<strong>✅ JSON válido recibido</strong> (" . count($json) . " usuario(s))<br>";
-            } else {
-                echo "<strong>⚠️ Respuesta no es JSON válido:</strong> " . json_last_error_msg() . "<br>";
-                echo "<strong>Respuesta recibida:</strong><br>";
-                echo "<pre style='background:#f8f9fa; padding:10px; max-height:200px; overflow:auto;'>" . htmlspecialchars(substr($response, 0, 500)) . "</pre>";
+    // Usar respaldo local si remoto falla
+    if (!$users) {
+        $users = $backup_users;
+        $auth_source = 'backup';
+        error_log("Auth: Usando usuarios de respaldo local");
+    }
+    
+    // Verificar credenciales
+    $username = $_SERVER['PHP_AUTH_USER'] ?? '';
+    $password = $_SERVER['PHP_AUTH_PW'] ?? '';
+    
+    foreach ($users as $user) {
+        if (is_array($user) && isset($user['u']) && isset($user['p'])) {
+            if ($user['u'] === $username && $user['p'] === $password) {
+                error_log("Auth: Login exitoso para '$username' usando $auth_source");
+                return true;
             }
         }
-        
-    } elseif ($http_code == 502) {
-        echo "<div style='background:#f8d7da; border:1px solid #f5c6cb; padding:15px; border-radius:5px; margin:10px 0;'>";
-        echo "❌ <strong>Servicio sigue dormido (HTTP 502)</strong><br>";
-        echo "🔄 Los servicios gratuitos de Render pueden tardar más en despertar.<br>";
-        echo "💡 <strong>Opciones:</strong><br>";
-        echo "   1. Esperar 2-3 minutos más e intentar de nuevo<br>";
-        echo "   2. Contactar al administrador del servicio de autenticación<br>";
-        echo "   3. Usar el modo de emergencia en el sistema";
-        echo "</div>";
-        
-    } else {
-        echo "<div style='background:#fff3cd; border:1px solid #ffeaa7; padding:15px; border-radius:5px; margin:10px 0;'>";
-        echo "⚠️ <strong>Respuesta inesperada (HTTP $http_code)</strong><br>";
-        echo "🔍 El servicio puede estar experimentando problemas.<br>";
-        if ($response) {
-            echo "<strong>Respuesta del servidor:</strong><br>";
-            echo "<pre style='background:#f8f9fa; padding:10px; max-height:200px; overflow:auto;'>" . htmlspecialchars(substr($response, 0, 500)) . "</pre>";
-        }
-        echo "</div>";
     }
     
-    echo "<br><a href='wake_service.php'>🔄 Intentar nuevamente</a> | ";
-    echo "<a href='panel.php'>📋 Ir al panel</a>";
+    // Credenciales inválidas
+    error_log("Auth: Credenciales inválidas para '$username'");
     
-} else {
-    echo "<p>El servicio de autenticación parece estar dormido (error HTTP 502).</p>";
-    echo "<p>Los servicios gratuitos de Render.com se duermen tras períodos de inactividad.</p>";
-    echo "<p>🔽 <strong>Haz clic para despertar el servicio:</strong></p>";
-    echo "<a href='?wake=1' style='display:inline-block; background:#007bff; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;'>🔄 Despertar Servicio</a>";
+    header('WWW-Authenticate: Basic realm="Panel de Licencias"');
+    header('HTTP/1.0 401 Unauthorized');
     
-    echo "<hr>";
-    echo "<h3>📋 Información sobre errores HTTP 502:</h3>";
-    echo "<ul>";
-    echo "<li><strong>502 Bad Gateway:</strong> El servidor destino no puede procesar la petición</li>";
-    echo "<li><strong>Causa común:</strong> Servicio dormido en plataformas gratuitas</li>";
-    echo "<li><strong>Tiempo de activación:</strong> 30-60 segundos típicamente</li>";
-    echo "<li><strong>Solución:</strong> Enviar una petición para despertar el servicio</li>";
-    echo "</ul>";
+    echo '<!DOCTYPE html>
+<html>
+<head>
+    <title>Acceso Requerido</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f8f9fa; margin: 0; padding: 50px; }
+        .auth-box { max-width: 400px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 20px rgba(0,0,0,0.1); text-align: center; }
+        .title { color: #495057; font-size: 24px; margin-bottom: 20px; }
+        .message { color: #6c757d; margin-bottom: 20px; line-height: 1.5; }
+        .credentials { background: #e9ecef; padding: 15px; border-radius: 5px; font-size: 14px; color: #495057; }
+        .status { margin-top: 15px; font-size: 12px; color: #6c757d; }
+    </style>
+</head>
+<body>
+    <div class="auth-box">
+        <div class="title">🔐 Acceso Requerido</div>
+        <div class="message">
+            Para acceder al panel de licencias, debe proporcionar credenciales válidas.
+        </div>
+        <div class="credentials">
+            <strong>Usuarios disponibles:</strong><br>
+            • admin / pass1234<br>
+            • gestor / clave5678
+        </div>
+        <div class="status">
+            Sistema de autenticación: ' . ucfirst($auth_source) . '<br>
+            ' . ($auth_source === 'remote' ? '✅ Servidor remoto activo' : '🔄 Usando respaldo local') . '
+        </div>
+    </div>
+</body>
+</html>';
+    
+    exit;
 }
 ?>
-
-<style>
-body { font-family: Arial, sans-serif; margin: 20px; }
-pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
-code { background: #e9ecef; padding: 2px 4px; border-radius: 3px; }
-</style>

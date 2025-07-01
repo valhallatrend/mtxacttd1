@@ -60,7 +60,7 @@ $licencias = $db->query('SELECT * FROM licencias ORDER BY cuenta')->fetchAll(PDO
 
 <div class="alert">
     <strong>📋 Diagnóstico recomendado:</strong><br>
-    1. <a href="debug_auth.php" target="_blank">🔍 Ejecutar diagnóstico de auth.php</a><br>
+    1. <a href="auth_debug.php" target="_blank">🔍 Ejecutar diagnóstico de auth.php</a><br> 
     2. Verificar que el archivo auth.php existe y tiene la función auth()<br>
     3. Una vez corregido, restaurar la autenticación en panel.php
 </div>
@@ -101,7 +101,7 @@ $licencias = $db->query('SELECT * FROM licencias ORDER BY cuenta')->fetchAll(PDO
 
 <div style="margin-top: 20px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
     <h3>🔧 Herramientas de diagnóstico:</h3>
-    <a href="debug_auth.php" style="background: #17a2b8; color: white; padding: 8px 15px; text-decoration: none; border-radius: 3px; margin-right: 10px;">🔍 Diagnosticar auth.php</a>
+    <a href="auth_debug.php" style="background: #17a2b8; color: white; padding: 8px 15px; text-decoration: none; border-radius: 3px; margin-right: 10px;">🔍 Diagnosticar auth.php</a>
     <a href="wake_service.php" style="background: #28a745; color: white; padding: 8px 15px; text-decoration: none; border-radius: 3px;">🔄 Verificar servicio externo</a>
 </div>
 

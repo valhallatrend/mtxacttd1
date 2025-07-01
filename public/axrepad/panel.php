@@ -29,6 +29,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cuenta_original'])) {
     echo "<p style='color:green;'>Licencia actualizada.</p>";
 }
 
+#revision de update
+$db_file = 'licencias.sqlite';
+$full_path = realpath($db_file);
+
+// Modo debug
+echo "<h3>🧪 DEBUG DE ACTUALIZACIÓN</h3>";
+echo "<strong>📍 Ruta de la base de datos usada:</strong> $full_path<br>";
+
+try {
+    $db = new PDO("sqlite:$db_file");
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    // Cambia estos valores por los que estés usando en el UPDATE real
+    $id = 1; // ID de prueba
+    $nueva_fecha = '2025-07-30';
+
+    $stmt = $db->prepare("UPDATE licencias SET vencimiento = :v WHERE id = :id");
+    $success = $stmt->execute([':v' => $nueva_fecha, ':id' => $id]);
+
+    if ($success) {
+        echo "✅ UPDATE ejecutado con éxito.<br>";
+    } else {
+        echo "⚠️ UPDATE no aplicó.<br>";
+    }
+
+    // Confirmación de cambio
+    $result = $db->query("SELECT id, vencimiento FROM licencias WHERE id = $id");
+    $row = $result->fetch(PDO::FETCH_ASSOC);
+    echo "🗓️ Fecha actual de ID $id: " . $row['vencimiento'] . "<br>";
+
+} catch (PDOException $e) {
+    echo "❌ Error en la base de datos: " . $e->getMessage();
+}
+
+
+
 $licencias = $db->query('SELECT * FROM licencias ORDER BY cuenta')->fetchAll(PDO::FETCH_ASSOC);
 ?>
 

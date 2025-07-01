@@ -1,5 +1,5 @@
 <?php
-require_once('auth.php');
+require_once(__DIR__ . '/auth.php');
 auth();
 
 $db = new PDO('sqlite:/app/db/licencias.sqlite');
